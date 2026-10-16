@@ -16,6 +16,7 @@ import { SignatureCache, conversionSignature } from "../tracking/cache";
 import { planChanges, type PlanItem, type PlannedTarget } from "../tracking/planner";
 import { scanTargets, type TargetSpec, type VaultNote } from "../tracking/scan";
 import type { ConvertRequest, ConvertedTarget } from "./executor";
+import { refineLinkWarnings } from "./warnings";
 
 const IMAGE_TYPES: Record<string, ImageContentType> = {
   png: "image/png",
@@ -92,7 +93,18 @@ export class PublishService {
       });
       const { parentId: _parentId, ...fields } = converted.fields;
       planned.push({ ...target, hash: converted.hash, blocksHash: converted.blocksHash, fields });
-      if (converted.warnings.length > 0) warnings.set(target.key, converted.warnings);
+      const sourcePath = target.contentPath;
+      const shown = sourcePath
+        ? refineLinkWarnings(
+            converted.warnings,
+            (link) => {
+              const file = this.app.metadataCache.getFirstLinkpathDest(link, sourcePath);
+              return file ? this.contentToKey.get(file.path) : undefined;
+            },
+            (key) => key in manifest.entries,
+          )
+        : converted.warnings;
+      if (shown.length > 0) warnings.set(target.key, shown);
       progress.onProgress?.(index + 1, targets.length);
       if (index % YIELD_EVERY === YIELD_EVERY - 1) await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
     }

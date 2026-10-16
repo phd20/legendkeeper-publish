@@ -55,7 +55,7 @@ Changes are grouped, and you choose what to send:
 | New | Yes | Notes not yet in LegendKeeper |
 | Changed | Yes | Notes whose published content would change |
 | Moved / renamed | Yes | Notes moved to another folder or renamed |
-| Required parents | Automatic | New folders that ticked notes need. They tick themselves. |
+| Required parents | Automatic | New folders that ticked notes need, and that have no page of their own. They tick themselves. A folder with its own page (`Lore/Lore.md`) is listed under New, so you can tick it on its own. |
 | Edited in LegendKeeper | No | Pages someone also changed in LegendKeeper since your last publish. Ticking one **overwrites** those LegendKeeper edits. |
 | Deleted | No | Notes you removed or excluded. Ticking one moves its page to the LegendKeeper trash, where it can be restored. |
 

@@ -82,11 +82,11 @@ export class MarkdownConverter {
     return this.blocks(tree.children);
   }
 
-  private warn(kind: WarningKind, message: string): void {
+  private warn(kind: WarningKind, message: string, link?: string): void {
     const key = `${kind}:${message}`;
     if (this.seenWarnings.has(key)) return;
     this.seenWarnings.add(key);
-    this.warnings.push({ kind, message });
+    this.warnings.push({ kind, message, ...(link ? { link } : {}) });
   }
 
   // ───────────────────────── block level ─────────────────────────
@@ -408,7 +408,7 @@ export class MarkdownConverter {
     const path = decodeURIComponent(url.split("#")[0]).replace(/\.md$/i, "");
     const target = path ? this.ctx.resolveNote(path) : null;
     if (target) return [{ mention: { resourceId: target.resourceId } }];
-    if (path) this.warn("unresolved-link", `Unresolved link: ${path}`);
+    if (path) this.warn("unresolved-link", `Unresolved link: ${path}`, path);
     return this.inline(children, marks);
   }
 
@@ -472,7 +472,7 @@ export class MarkdownConverter {
     if (!token.target) return textRun(); // [[#Heading]] within the same note
     const target = this.ctx.resolveNote(token.target);
     if (!target) {
-      this.warn("unresolved-link", `Unresolved link: ${token.target}`);
+      this.warn("unresolved-link", `Unresolved link: ${token.target}`, token.target);
       return textRun();
     }
     // The label belongs inside the mention object; the Run schema rejects any other key beside `mention`.

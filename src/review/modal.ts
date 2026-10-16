@@ -126,7 +126,9 @@ export class ReviewModal extends Modal {
       box.addEventListener("change", () => this.update(setChecked(this.planItems, this.checkedKeys, item.key, box.checked)));
       label.createSpan({ text: ` ${describe(item)}` });
       if (item.probable) label.createSpan({ cls: "lk-badge", text: " (looks like a rename)" });
-      if (fixed) label.createSpan({ cls: "lk-badge", text: " (added automatically)" });
+      if (fixed) {
+        label.createSpan({ cls: "lk-badge", text: group === "required" ? " (added automatically)" : " (needed by selected notes)" });
+      }
 
       const noteFile = item.kind === "note" ? this.app.vault.getFileByPath(item.key) : null;
       if (noteFile) {

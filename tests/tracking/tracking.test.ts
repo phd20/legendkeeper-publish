@@ -93,6 +93,17 @@ describe("planChanges", () => {
     ]);
   });
 
+  it("treats a new folder that has its own folder note as a normal New item, not a pure parent", () => {
+    const items = planChanges(
+      [planned("Lore", { kind: "folder", contentPath: "Lore/Lore.md" }), planned("Places", { kind: "folder", contentPath: null })],
+      emptyManifest(),
+    );
+    expect(items.map((i) => [i.key, i.type])).toEqual([
+      ["Lore", "new"],
+      ["Places", "required"],
+    ]);
+  });
+
   it("lists nothing for unchanged items", () => {
     expect(planChanges([planned("A.md")], manifestWith({ "A.md": entry() }))).toEqual([]);
   });

@@ -116,7 +116,7 @@ describe("wikilinks", () => {
   it("falls back to plain text with a warning for unpublished targets", () => {
     const { blocks, warnings } = convert("Plans: [[Secret Plans]]", { notes });
     expect((blocks[0] as any).content).toEqual([{ text: "Plans: Secret Plans" }]);
-    expect(warnings).toEqual([{ kind: "unresolved-link", message: "Unresolved link: Secret Plans" }]);
+    expect(warnings).toEqual([{ kind: "unresolved-link", message: "Unresolved link: Secret Plans", link: "Secret Plans" }]);
   });
 
   it("is not confused by underscores or pipes inside tables", () => {

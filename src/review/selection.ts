@@ -31,6 +31,11 @@ function parentKeyOf(item: PlanItem): string | null {
   return item.target?.parentKey ?? null;
 }
 
+/** New folders that notes can sit under: pure parents ("required") and folders that have a page of their own. */
+function newFolders(items: PlanItem[]): Map<string, PlanItem> {
+  return new Map(items.filter((i) => i.kind === "folder" && (i.type === "required" || i.type === "new")).map((i) => [i.key, i]));
+}
+
 /** Keys of the required (new) folders an item depends on, nearest first. */
 function requiredAncestors(item: PlanItem, required: Map<string, PlanItem>): string[] {
   const out: string[] = [];
@@ -47,7 +52,7 @@ function requiredAncestors(item: PlanItem, required: Map<string, PlanItem>): str
  * with no selected descendant is not.
  */
 export function normalizeSelection(items: PlanItem[], selection: ReadonlySet<string>): Set<string> {
-  const required = new Map(items.filter((i) => i.type === "required").map((i) => [i.key, i]));
+  const required = newFolders(items);
   const needed = new Set<string>();
   const out = new Set<string>();
   for (const item of items) {
@@ -61,8 +66,8 @@ export function normalizeSelection(items: PlanItem[], selection: ReadonlySet<str
 
 /** A required parent cannot be unchecked while any selected item sits beneath it. */
 export function isLocked(item: PlanItem, items: PlanItem[], selection: ReadonlySet<string>): boolean {
-  if (item.type !== "required") return false;
-  const required = new Map(items.filter((i) => i.type === "required").map((i) => [i.key, i]));
+  if (item.kind !== "folder" || (item.type !== "required" && item.type !== "new")) return false;
+  const required = newFolders(items);
   return items.some(
     (other) =>
       other.key !== item.key &&
@@ -104,7 +109,7 @@ export function selectedRun(items: PlanItem[], selection: ReadonlySet<string>): 
 export function filterToNote(items: PlanItem[], key: string): PlanItem[] {
   const target = items.find((i) => i.key === key);
   if (!target) return [];
-  const required = new Map(items.filter((i) => i.type === "required").map((i) => [i.key, i]));
+  const required = newFolders(items);
   const keep = new Set([key, ...requiredAncestors(target, required)]);
   return items.filter((i) => keep.has(i.key));
 }

@@ -43,6 +43,13 @@ When a selected item needs a folder resource that does not yet exist, the review
 - **WHEN** the user unchecks every selected descendant of `Factions`
 - **THEN** the `Factions` Required parent becomes unchecked
 
+### Requirement: Folders with their own page are selectable
+A new folder whose folder note is publishable SHALL be classified New and be selectable on its own, and SHALL be selected and locked only while a selected note sits beneath it.
+
+#### Scenario: Folder containing only its folder note
+- **WHEN** `Lore/` contains only `Lore/Lore.md`
+- **THEN** `Lore` appears under New, can be ticked and unticked, and is published with its folder note as its page
+
 ### Requirement: LegendKeeper edit detection
 Before showing the review, the plugin SHALL read the current page document version of each Changed or Moved item and SHALL classify the item as Edited in LegendKeeper when it differs from the manifest's stored version. Checking such an item SHALL mean overwriting the LegendKeeper edits.
 

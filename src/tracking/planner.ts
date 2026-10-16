@@ -33,7 +33,7 @@ export interface PlanItem {
 /**
  * Classify every target and manifest entry. Pure.
  *  - new:      note not in the manifest
- *  - required: folder not in the manifest (needed whenever a descendant is published)
+ *  - required: folder with no folder note, not in the manifest (only needed when a descendant is published)
  *  - changed:  output hash differs
  *  - moved:    parent folder differs, or a deleted + new pair with identical page content
  *  - deleted:  manifest entry with no target
@@ -46,7 +46,9 @@ export function planChanges(targets: PlannedTarget[], manifest: Manifest): PlanI
     const entry = manifest.entries[target.key];
     const base = { key: target.key, kind: target.kind, name: target.name, target };
     if (!entry) {
-      items.push({ ...base, type: target.kind === "folder" ? "required" : "new" });
+      // A folder with a folder note has a page of its own, so it is a normal item the user can choose.
+      const onlyAParent = target.kind === "folder" && target.contentPath === null;
+      items.push({ ...base, type: onlyAParent ? "required" : "new" });
       continue;
     }
     const contentChanged = entry.hash !== target.hash;

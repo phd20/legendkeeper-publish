@@ -4,6 +4,7 @@ export type { Block, Run };
 
 export type WarningKind =
   | "unresolved-link"
+  | "pending-link"
   | "unsupported-link"
   | "unsupported-embed"
   | "missing-image"
@@ -14,6 +15,8 @@ export type WarningKind =
 export interface Warning {
   kind: WarningKind;
   message: string;
+  /** For link warnings: the link path as written, so callers can tell why it did not resolve. */
+  link?: string;
 }
 
 /** Everything the converter needs from the outside world. Injected so convert/ stays pure. */

@@ -70,6 +70,38 @@ describe("required parents", () => {
   });
 });
 
+describe("folders that have their own page", () => {
+  // Lore contains only its folder note; Places has a folder note and a child.
+  const items = [
+    { ...it_("new", "Lore"), kind: "folder" as const },
+    { ...it_("new", "Places"), kind: "folder" as const },
+    it_("new", "Places/Keep.md", "Places"),
+  ];
+
+  it("lets a folder with only its own page be ticked and unticked", () => {
+    const base = defaultSelection(items);
+    expect(base.has("Lore")).toBe(true);
+    expect(isLocked(items[0], items, base)).toBe(false);
+    const off = setChecked(items, base, "Lore", false);
+    expect(off.has("Lore")).toBe(false);
+    expect(setChecked(items, off, "Lore", true).has("Lore")).toBe(true);
+  });
+
+  it("still pulls in and locks a folder page that selected notes sit under", () => {
+    const sel = setChecked(items, new Set(), "Places/Keep.md", true);
+    expect(sel.has("Places")).toBe(true);
+    expect(isLocked(items[1], items, sel)).toBe(true);
+    // Unticking the folder is impossible while a child is selected.
+    expect(setChecked(items, sel, "Places", false).has("Places")).toBe(true);
+  });
+
+  it("leaves the folder alone when its children are cleared", () => {
+    const sel = setChecked(items, defaultSelection(items), "Places/Keep.md", false);
+    expect(sel.has("Places")).toBe(true); // it is selectable on its own and stays ticked
+    expect(isLocked(items[1], items, sel)).toBe(false);
+  });
+});
+
 describe("run selection", () => {
   it("returns selected items in plan order and the overwrite set", () => {
     const items = [it_("changed", "A.md"), it_("changed", "B.md", null, { editedInLk: true }), it_("deleted", "C.md")];
