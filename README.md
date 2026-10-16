@@ -118,7 +118,8 @@ Skipped, with a warning: embedded PDFs, audio, video, SVG and other non-image fi
 - **Your API key** is kept in Obsidian's secret storage. It is never written to your vault, to the plugin's data file, or to the console.
 - **What stays in your vault.** The plugin's `data.json` holds your settings and a record of which note matches which LegendKeeper page (page IDs and content fingerprints, not note text). It syncs with your vault.
 - **Publishing is one-way.** The plugin never reads LegendKeeper content back into your notes, and it never deletes a note from your vault.
-- **Pages it did not create are left alone.** If a page with the same name already exists in LegendKeeper, you will get a second page, not an overwrite.
+- **Pages it did not create are left alone.** If a page with the same name already exists in LegendKeeper but was not made by this plugin, you will get a second page, not an overwrite.
+- **If the plugin forgets what it published** (for example you uninstalled it, or reset the publish state), publishing again finds the pages it created before and updates them instead of making duplicates. This works when the project, mount point, vault name and note paths are the same as before. A note you renamed or moved while the plugin had no record of it is published as a new page.
 - **What publishing overwrites.** Publishing a note replaces that page's main content and its name, tags, aliases and icon with what is in your note. Other things on the LegendKeeper page (extra documents, sidebar properties, permissions) are not touched.
 
 ## Limits and known issues
@@ -127,6 +128,7 @@ Skipped, with a warning: embedded PDFs, audio, video, SVG and other non-image fi
 - **Edits made in LegendKeeper to a page's name, tags or icon** are overwritten the next time that note is published. Edits to its content are flagged first.
 - **Large vaults.** LegendKeeper allows 120 writes a minute and 3,000 an hour per key. The plugin slows itself down to stay under that and resumes on its own, so a first publish of hundreds of notes takes a while.
 - **Renames made outside Obsidian** (for example by file sync) are usually recognised as a move, but can show as a deleted note plus a new one. Deleted is unticked, so the worst case is a duplicate page.
+- **Disable, don't uninstall.** Uninstalling a plugin in Obsidian deletes its saved data, which includes the record of what was published. If you only want it out of the way, turn it off in **Settings → Community plugins** instead. Updating through BRAT is safe.
 - **One device at a time.** Publishing from two devices at the same moment is not supported.
 - **Mobile** is supported by design but has not been tested yet.
 - Not included yet: infobox and sidebar property mapping, per-note change previews, LegendKeeper maps and timelines.

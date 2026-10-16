@@ -29,6 +29,8 @@ export type ImageContentType = "image/jpeg" | "image/png" | "image/gif" | "image
 export interface LkApi {
   project(): Promise<{ id: string; name: string }>;
   listTopLevelResources(): Promise<Array<{ id: string; name: string }>>;
+  /** Ids of every live resource in the project; used to re-link pages after the publish record is lost. */
+  listResourceIds(): Promise<Set<string>>;
   createResources(specs: CreateResourceSpec[], idempotencyKey: string): Promise<CreatedResource[]>;
   updateResource(id: string, patch: ResourceFieldsPatch): Promise<void>;
   moveResource(id: string, parentId: string): Promise<void>;

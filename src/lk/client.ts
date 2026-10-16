@@ -60,6 +60,12 @@ export function createLkApi(options: ClientOptions): LkApi {
       return out;
     },
 
+    async listResourceIds() {
+      const ids = new Set<string>();
+      for await (const r of await sdk.resources.list({ limit: 100 })) ids.add(r.id);
+      return ids;
+    },
+
     async createResources(specs: CreateResourceSpec[], idempotencyKey: string): Promise<CreatedResource[]> {
       const result = await sdk.resources.createMany({
         resources: specs.map((spec) => clean(spec)),

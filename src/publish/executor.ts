@@ -1,5 +1,5 @@
 import { lkErrorInfo, type CreateResourceSpec, type ImageContentType, type LkApi } from "../lk/api";
-import { mintResourceId } from "../lk/ids";
+import { deriveResourceId } from "../lk/ids";
 import type { Block, ResourceFields, Warning } from "../convert/types";
 import type { Manifest, ManifestEntry } from "../tracking/manifest";
 import type { PlanItem } from "../tracking/planner";
@@ -51,6 +51,8 @@ export interface RunFailure {
 
 export interface RunSummary {
   published: string[];
+  /** Existing LegendKeeper pages that were re-linked instead of duplicated. */
+  adopted: string[];
   deleted: string[];
   skipped: Array<{ key: string; reason: string }>;
   failed: RunFailure[];
@@ -58,6 +60,7 @@ export interface RunSummary {
 }
 
 const CREATE_CHUNK = 100;
+const MAX_ID_ATTEMPTS = 5;
 const ADMIN_MESSAGE = "API key isn't an admin key; hidden pages can't be published";
 
 export async function executePublish(items: PlanItem[], deps: ExecutorDeps): Promise<RunSummary> {
@@ -67,8 +70,9 @@ export async function executePublish(items: PlanItem[], deps: ExecutorDeps): Pro
 class Cancelled extends Error {}
 
 class Executor {
-  private readonly summary: RunSummary = { published: [], deleted: [], skipped: [], failed: [], cancelled: false };
+  private readonly summary: RunSummary = { published: [], adopted: [], deleted: [], skipped: [], failed: [], cancelled: false };
   private readonly newIds = new Map<string, string>();
+  private readonly adopted = new Set<string>();
   private readonly createdDocIds = new Map<string, string>();
   private readonly dead = new Set<string>(); // keys that failed or were skipped
   private readonly finished = new Set<string>();
@@ -124,16 +128,31 @@ class Executor {
     }
   }
 
+  private idScope() {
+    const { manifest, vaultName } = this.deps;
+    return { projectId: manifest.projectId, mountId: manifest.mountId, vaultName };
+  }
+
   private async createResources(): Promise<void> {
     const creating = this.activeItems
       .filter((i) => (i.type === "new" || i.type === "required") && i.target)
       .sort((a, b) => depthOf(a.key) - depthOf(b.key));
-    for (const item of creating) this.newIds.set(item.key, mintResourceId());
+    if (creating.length === 0) return;
+
+    // Ids come from the note's location, so pages made by an earlier run (whose record may be lost) are found again.
+    for (const item of creating) this.newIds.set(item.key, await deriveResourceId(this.idScope(), item.key));
+    const existing = await this.deps.api.listResourceIds();
+    const toCreate: PlanItem[] = [];
+    for (const item of creating) {
+      this.checkCancelled();
+      if (existing.has(this.newIds.get(item.key)!)) await this.adopt(item);
+      else toCreate.push(item);
+    }
 
     // Placeholder fields are enough to create; real content is written afterwards from a fresh conversion.
-    for (let start = 0; start < creating.length; start += CREATE_CHUNK) {
+    for (let start = 0; start < toCreate.length; start += CREATE_CHUNK) {
       this.checkCancelled();
-      const chunk = creating.slice(start, start + CREATE_CHUNK).filter((i) => this.parentUsable(i));
+      const chunk = toCreate.slice(start, start + CREATE_CHUNK).filter((i) => this.parentUsable(i));
       if (chunk.length === 0) continue;
       const specs = chunk.map((item) => this.createSpec(item));
       try {
@@ -145,15 +164,40 @@ class Executor {
         for (const item of chunk) {
           this.checkCancelled();
           if (!this.parentUsable(item)) continue;
-          try {
-            const [created] = await this.deps.api.createResources([this.createSpec(item)], `create-${this.newIds.get(item.key)}`);
-            this.recordCreated(item, created?.documentId);
-          } catch (single) {
-            if (isAbort(single)) throw single;
-            this.fail(item, single, item.target?.fields.isHidden);
-          }
+          await this.createOne(item);
         }
       }
+    }
+  }
+
+  /** Create a single resource; an id held by a trashed page is skipped in favour of the next candidate. */
+  private async createOne(item: PlanItem): Promise<void> {
+    for (let attempt = 0; attempt < MAX_ID_ATTEMPTS; attempt++) {
+      if (attempt > 0) this.newIds.set(item.key, await deriveResourceId(this.idScope(), item.key, attempt));
+      try {
+        const [created] = await this.deps.api.createResources([this.createSpec(item)], `create-${this.newIds.get(item.key)}`);
+        this.recordCreated(item, created?.documentId);
+        return;
+      } catch (error) {
+        if (isAbort(error)) throw error;
+        if (lkErrorInfo(error).code === "DUPLICATE_ID" && attempt < MAX_ID_ATTEMPTS - 1) continue;
+        this.fail(item, error, item.target?.fields.isHidden);
+        return;
+      }
+    }
+  }
+
+  /** The page already exists in LegendKeeper: link to it and let the normal page write update it. */
+  private async adopt(item: PlanItem): Promise<void> {
+    if (!this.parentUsable(item)) return;
+    try {
+      const documentId = await this.deps.api.getMainDocumentId(this.newIds.get(item.key)!);
+      this.recordCreated(item, documentId);
+      this.adopted.add(item.key);
+      this.summary.adopted.push(item.key);
+    } catch (error) {
+      if (isAbort(error)) throw error;
+      this.fail(item, error);
     }
   }
 
@@ -288,7 +332,8 @@ class Executor {
       }
 
       try {
-        const isNew = item.type === "new" || item.type === "required";
+        // An adopted page already exists, so it needs its fields patched and its page written without If-Match.
+        const isNew = (item.type === "new" || item.type === "required") && !this.adopted.has(item.key);
         if (!isNew && entry.hash !== converted.hash) {
           await this.deps.api.updateResource(entry.resourceId, patchOf(converted.fields));
         }

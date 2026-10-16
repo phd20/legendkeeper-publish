@@ -3,7 +3,7 @@ import { executePublish, type ConvertRequest, type ConvertedTarget, type Executo
 import { emptyManifest, type Manifest, type ManifestEntry } from "../../src/tracking/manifest";
 import type { PlanItem, PlannedTarget } from "../../src/tracking/planner";
 import { PENDING_ASSET_PREFIX, type Block } from "../../src/convert/types";
-import { isValidResourceId } from "../../src/lk/ids";
+import { deriveResourceId, isValidResourceId } from "../../src/lk/ids";
 import type { CreateResourceSpec, LkApi } from "../../src/lk/api";
 
 class FakeError extends Error {
@@ -38,6 +38,10 @@ class FakeApi implements LkApi {
   }
   async listTopLevelResources() {
     return [];
+  }
+  preexisting = new Set<string>();
+  async listResourceIds() {
+    return new Set([...this.resources.keys(), ...this.preexisting]);
   }
   async createResources(specs: CreateResourceSpec[], key: string) {
     this.log("create");
@@ -438,5 +442,81 @@ describe("progress and cancellation", () => {
     expect(api.calls.filter((c) => c === "replace")).toHaveLength(3);
     const written = Object.values(manifest.entries).filter((e) => e.hash !== "");
     expect(written).toHaveLength(3);
+  });
+});
+
+describe("re-linking pages after the publish record is lost", () => {
+  const scope = { projectId: "proj", mountId: "mount001", vaultName: "My Vault" };
+
+  it("derives stable, valid ids that differ by scope, path and attempt", async () => {
+    const a = await deriveResourceId(scope, "A.md");
+    expect(a).toBe(await deriveResourceId(scope, "A.md"));
+    expect(isValidResourceId(a)).toBe(true);
+    expect(a).toHaveLength(24);
+    const others = await Promise.all([
+      deriveResourceId(scope, "B.md"),
+      deriveResourceId({ ...scope, mountId: "other" }, "A.md"),
+      deriveResourceId({ ...scope, vaultName: "Other Vault" }, "A.md"),
+      deriveResourceId({ ...scope, projectId: "other" }, "A.md"),
+      deriveResourceId(scope, "A.md", 1),
+    ]);
+    expect(new Set([a, ...others]).size).toBe(6);
+  });
+
+  it("adopts an existing page instead of creating a duplicate, and updates it without If-Match", async () => {
+    const { api, manifest, deps } = setup();
+    const id = await deriveResourceId(scope, "A.md");
+    api.resources.set(id, { id, name: "Old name", parentId: "mount001", docId: "docA", version: 4, hidden: false });
+    const summary = await executePublish([item("new", target("A.md"))], deps);
+    expect(api.createBatches).toEqual([]);
+    expect(summary).toMatchObject({ adopted: ["A.md"], published: ["A.md"], failed: [] });
+    expect(manifest.entries["A.md"]).toMatchObject({ resourceId: id, documentId: "docA", hash: "hash-A.md" });
+    expect(api.calls).toContain("update");
+    expect(api.ifMatches).toEqual([undefined]);
+  });
+
+  it("adopts what exists and creates only what is missing", async () => {
+    const { api, deps } = setup();
+    const id = await deriveResourceId(scope, "A.md");
+    api.resources.set(id, { id, name: "A", parentId: "mount001", docId: "docA", version: 1, hidden: false });
+    const summary = await executePublish([item("new", target("A.md")), item("new", target("B.md"))], deps);
+    expect(api.createBatches.flat().map((s) => s.name)).toEqual(["B"]);
+    expect(summary.adopted).toEqual(["A.md"]);
+    expect(summary.published.sort()).toEqual(["A.md", "B.md"]);
+  });
+
+  it("does not duplicate pages when the manifest is wiped and the notes are published again", async () => {
+    const first = setup();
+    const items = [item("required", folder("Places")), item("new", target("Places/Keep.md")), item("new", target("Home.md"))];
+    await executePublish(items, first.deps);
+    const created = [...first.api.resources.keys()].sort();
+    expect(created).toHaveLength(3);
+
+    // Same LegendKeeper, but the plugin's record is gone (uninstall and reinstall).
+    const second = setup({ manifest: emptyManifest("proj", "mount001") });
+    second.deps.api = first.api;
+    const summary = await executePublish(items, second.deps);
+    expect(first.api.createBatches).toHaveLength(1);
+    expect([...first.api.resources.keys()].sort()).toEqual(created);
+    expect(summary.adopted.sort()).toEqual(["Home.md", "Places", "Places/Keep.md"]);
+    expect(second.manifest.entries["Places/Keep.md"].resourceId).toBe(first.manifest.entries["Places/Keep.md"].resourceId);
+    expect(second.manifest.entries["Places/Keep.md"].parentKey).toBe("Places");
+  });
+
+  it("moves on to the next id when the derived one is held by a trashed page", async () => {
+    const { api, manifest, deps } = setup();
+    const taken = await deriveResourceId(scope, "A.md");
+    api.failCreate = (spec) => (spec.id === taken ? new FakeError(409, "DUPLICATE_ID") : undefined);
+    const summary = await executePublish([item("new", target("A.md"))], deps);
+    expect(summary).toMatchObject({ published: ["A.md"], failed: [], adopted: [] });
+    expect(manifest.entries["A.md"].resourceId).toBe(await deriveResourceId(scope, "A.md", 1));
+  });
+
+  it("fails an item cleanly when every candidate id is taken", async () => {
+    const { api, deps } = setup();
+    api.failCreate = () => new FakeError(409, "DUPLICATE_ID");
+    const summary = await executePublish([item("new", target("A.md"))], deps);
+    expect(summary.failed.map((f) => f.key)).toEqual(["A.md"]);
+    expect(summary.failed[0].code).toBe("DUPLICATE_ID");
   });
 });

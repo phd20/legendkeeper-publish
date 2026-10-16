@@ -53,6 +53,11 @@ export class SummaryModal extends Modal {
     contentEl.createEl("p", {
       text: `${s.published.length} published, ${s.deleted.length} moved to trash, ${s.skipped.length} skipped, ${s.failed.length} failed.`,
     });
+    if (s.adopted.length > 0) {
+      contentEl.createEl("p", {
+        text: `${s.adopted.length} page${s.adopted.length === 1 ? " was" : "s were"} already in LegendKeeper from an earlier publish and ${s.adopted.length === 1 ? "was" : "were"} updated instead of duplicated.`,
+      });
+    }
     if (s.cancelled) contentEl.createEl("p", { text: "Items that did not run will appear in the next review." });
 
     if (s.failed.length > 0) {

@@ -10,6 +10,17 @@ The executor SHALL mint a new 24-character cuid2 id for every resource to be cre
 - **WHEN** a New note is published
 - **THEN** the created LegendKeeper resource has the id minted for it and that id is recorded in the manifest
 
+### Requirement: Stable ids and re-linking existing pages
+The executor SHALL derive each new resource's id from the project, mount point, vault name and note path, and SHALL re-link, instead of creating, any page whose derived id already exists in the project. A re-linked page SHALL be updated without `If-Match`. If a derived id is held by a trashed page, the executor SHALL try the next candidate id, and SHALL fail the item only after exhausting its candidates.
+
+#### Scenario: Publish record lost
+- **WHEN** the manifest is empty and a note's derived id already exists in LegendKeeper
+- **THEN** no resource is created for it, the manifest links to the existing page, the page is updated, and the run summary reports it as re-linked
+
+#### Scenario: Derived id held by a trashed page
+- **WHEN** creating a resource answers `DUPLICATE_ID` and no live page has that id
+- **THEN** the executor retries with the next derived id and records that one
+
 ### Requirement: Operation ordering
 The executor SHALL perform operations in this order: create resources top-down by depth, upload images, move resources, patch resource fields, write pages, delete resources deepest-first.
 
