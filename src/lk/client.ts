@@ -40,7 +40,8 @@ export function createLkApi(options: ClientOptions): LkApi {
   const sdk = new LegendKeeper({
     apiKey: options.apiKey,
     fetch: options.fetch,
-    baseUrl: options.baseUrl,
+    // Always pinned: left unset, the SDK would honour an environment variable and could send the key elsewhere.
+    baseUrl: options.baseUrl ?? API_ORIGIN,
     maxRetries: 3,
     timeoutMs: 60_000,
   }) as unknown as Sdk;
