@@ -16,10 +16,10 @@ The plugin is not in Obsidian's community plugin list yet. The easiest way to in
 
 1. In Obsidian, go to **Settings → Community plugins**, turn off Restricted mode if asked, choose **Browse**, and install **Obsidian42 - BRAT**. Enable it.
 2. Open the command palette and run **BRAT: Add a beta plugin for testing**.
-3. Paste this repository's address and choose **Add plugin**.
+3. Paste `phd20/legendkeeper-publish` (or the full address, https://github.com/phd20/legendkeeper-publish) and choose **Add plugin**.
 4. Go to **Settings → Community plugins** and enable **LegendKeeper Publish**.
 
-To install by hand instead, download `main.js`, `manifest.json` and `styles.css` from the latest release and put them in a folder named `legendkeeper-publish` inside your vault's `.obsidian/plugins/` folder. Then enable the plugin.
+To install by hand instead, download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/phd20/legendkeeper-publish/releases/latest) and put them in a folder named `legendkeeper-publish` inside your vault's `.obsidian/plugins/` folder. Then enable the plugin.
 
 ## Set up
 
@@ -145,7 +145,7 @@ Skipped, with a warning: embedded PDFs, audio, video, SVG and other non-image fi
 
 ## Reporting problems
 
-Open an issue on this repository. Include the Obsidian version, whether you're on desktop or mobile, and the error text from the publish summary, including the code and request ID. Please never paste your API key.
+[Open an issue](https://github.com/phd20/legendkeeper-publish/issues/new/choose). Include the Obsidian version, whether you're on desktop or mobile, and the error text from the publish summary, including the code and request ID. Please never paste your API key.
 
 ## License
 
