@@ -1,7 +1,7 @@
 {
   "id": "legendkeeper-publish",
   "name": "LegendKeeper Publish",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.11.4",
   "description": "Publish notes to a LegendKeeper project. Review your changes, choose what to send, and keep LegendKeeper up to date.",
   "author": "Kirk Wiebe",

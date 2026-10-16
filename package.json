@@ -1,6 +1,6 @@
 {
   "name": "legendkeeper-publish",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Publish Obsidian vault changes to LegendKeeper",
   "main": "main.js",
   "type": "module",
