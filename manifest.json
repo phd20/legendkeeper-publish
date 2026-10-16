@@ -1,0 +1,9 @@
+{
+  "id": "legendkeeper-publish",
+  "name": "LegendKeeper Publish",
+  "version": "0.1.0",
+  "minAppVersion": "1.11.4",
+  "description": "Review and publish vault changes to a LegendKeeper project, like Obsidian Publish.",
+  "author": "Kirk Wiebe",
+  "isDesktopOnly": false
+}

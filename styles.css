@@ -1,0 +1,38 @@
+.lk-publish-review {
+  max-width: 720px;
+}
+.lk-publish-review .lk-group {
+  margin-bottom: var(--size-4-4);
+}
+.lk-publish-review .lk-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.lk-publish-review .lk-group-header h3 {
+  margin: 0;
+}
+.lk-publish-review .lk-group-buttons {
+  display: flex;
+  gap: var(--size-4-1);
+}
+.lk-publish-review .lk-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-4-2);
+  padding: var(--size-2-1) 0;
+}
+.lk-publish-review .lk-badge {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+.lk-publish-review .lk-open {
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+}
+.lk-publish-review details {
+  flex-basis: 100%;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
