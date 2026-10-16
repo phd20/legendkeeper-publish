@@ -120,11 +120,13 @@ export class ReviewModal extends Modal {
       const label = row.createEl("label");
       const box = label.createEl("input", { type: "checkbox" });
       box.checked = this.checkedKeys.has(item.key);
-      box.disabled = locked || group === "required";
+      const fixed = locked || group === "required";
+      box.disabled = fixed;
+      if (fixed) row.addClass("is-locked");
       box.addEventListener("change", () => this.update(setChecked(this.planItems, this.checkedKeys, item.key, box.checked)));
       label.createSpan({ text: ` ${describe(item)}` });
       if (item.probable) label.createSpan({ cls: "lk-badge", text: " (looks like a rename)" });
-      if (locked) label.createSpan({ cls: "lk-badge", text: " (required)" });
+      if (fixed) label.createSpan({ cls: "lk-badge", text: " (added automatically)" });
 
       const noteFile = item.kind === "note" ? this.app.vault.getFileByPath(item.key) : null;
       if (noteFile) {
