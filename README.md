@@ -53,6 +53,8 @@ A note counts as **Changed** when what would be published changes, not when the 
 | `lk-icon`, `lk-color`, `lk-shape` | Icon glyph (a Font Awesome name), `#RRGGBB` color, pin shape |
 | `lk-hidden: true` | Publishes the page hidden from players. The property name is a setting. Needs an admin key. |
 
+Hiding applies to each page on its own. Don't rely on a hidden parent folder to hide the pages inside it: set the hidden property on every page that must stay GM-only, or turn on **Publish pages hidden by default**. (Whether LegendKeeper hides children of a hidden page from players has not been confirmed.)
+
 The **Publish pages hidden by default** setting hides every page unless the note sets the hidden property to `false`. If your key is not an admin key, hidden pages fail with a clear message and are never published visible.
 
 ### Markdown

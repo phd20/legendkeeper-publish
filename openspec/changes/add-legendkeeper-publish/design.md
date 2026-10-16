@@ -216,7 +216,7 @@ None. This is a new plugin. Releases follow the community-plugin flow: a GitHub 
 ## Open Questions
 
 - **O1 (resolved).** `getDocument` has no `version`; `getDocumentBlocks` does, and it equals the version returned by the preceding write. The pre-check therefore uses `getBlocks` (one read per page). A stale `If-Match` answers `412 VERSION_MISMATCH` as designed.
-- **O2 (partly resolved).** Creating a visible child under a hidden parent leaves the child's own `isHidden` false: the flag is per resource and is not inherited in the API. Whether the LegendKeeper app still hides the child from players via the parent is not visible through the API; check by eye in 9.1.
+- **O2 (partly resolved).** Creating a visible child under a hidden parent leaves the child's own `isHidden` false: the flag is per resource and is not inherited in the API. Whether the LegendKeeper app still hides the child from players is not visible through the API. Observed with an admin account: the child stays visible. Not yet checked from a non-admin member account, so treat hiding as per-page and do not rely on inheritance (documented in the README).
 - **O3 (resolved).** A mention to a resource created in the same batch is accepted immediately.
 - **O4.** What is the LegendKeeper web URL format for a resource, needed for a future "Open in LegendKeeper" command?
 - **O5 (resolved).** The SDK client takes `{ apiKey, baseUrl?, fetch?, maxRetries?, timeoutMs? }`, where `fetch` is `(input: string, init: RequestInit) => Promise<Response>`.
